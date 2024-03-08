@@ -2,13 +2,15 @@ import { Injectable, UnauthorizedException, NotFoundException, ConflictException
 import { Prisma } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 import { BcryptService } from 'src/bcrypt/bcrypt.service';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UserService {
 
   constructor(
     private readonly databaseService: DatabaseService,
-    private readonly bcryptService: BcryptService
+    private readonly bcryptService: BcryptService,
+    private readonly jwtService: JwtService
   ) { }
 
   async register(createUserDto: Prisma.UserCreateInput) {
@@ -26,19 +28,26 @@ export class UserService {
     }
   }
 
-  async login(userInfo: { email: string, password: string }) {
+  async validateUser(userInfo: { email: string, password: string }) {
     const user = await this.findByEmail(userInfo.email)
     if (!user) {
-      return new UnauthorizedException('email is not found!')
+      throw new UnauthorizedException('email is not found!')
     } 
     const isValidPassword = await this.bcryptService.comparePasswords(userInfo.password, user.password)
     if (!isValidPassword) {
       throw new UnauthorizedException('Password is not correct');
     }
+    const {password, ...others} = user
+    return others
+  }
+
+  async login(user: {username: string, email: string, URLImage: string}) {
+    const payload = { user };
     return {
-      status: 200,
-      message: "login success"
-    }
+      status: "200",
+      message: "login success",
+      authorization: this.jwtService.sign(payload),
+    };
   }
 
   findByEmail(email: string) {
@@ -79,8 +88,6 @@ export class UserService {
     return await this.databaseService.user.deleteMany()
   }
 
-  update(id: number, updateUserDto: Prisma.UserUpdateInput) {
-    return `This action updates a #${id} user`;
-  }
+  
 
 }

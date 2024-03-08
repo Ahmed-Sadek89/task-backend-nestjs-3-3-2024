@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { Prisma } from '@prisma/client';
+import { AuthGuard } from 'src/guards/jwt.guards';
 
 
 @Controller('user')
@@ -14,21 +15,25 @@ export class UserController {
 
   @Post('login')
   async login(@Body() userLogin: { email: string, password: string }) {
-    const user = await this.userService.login(userLogin);
-    return user
+    const { email, password } = userLogin
+    const user = await this.userService.validateUser({ email, password });
+    return this.userService.login(user);
   }
 
   @Get("getAllUser")
+  @UseGuards(AuthGuard)
   findAllUsers() {
     return this.userService.findAllUser();
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard)
   async findUserById(@Param('id') id: string) {
     return this.userService.findUserById(parseInt(id));
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard)
   deleteUser(@Param('id') id: string) {
     return this.userService.deleteUser(parseInt(id));
   }
@@ -38,8 +43,4 @@ export class UserController {
     return this.userService.deleteAllUsers()
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: Prisma.UserUpdateInput) {
-    return this.userService.update(+id, updateUserDto);
-  }
 }
