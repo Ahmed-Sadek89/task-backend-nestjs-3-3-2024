@@ -32,16 +32,16 @@ export class UserService {
     const user = await this.findByEmail(userInfo.email)
     if (!user) {
       throw new UnauthorizedException('email is not found!')
-    } 
+    }
     const isValidPassword = await this.bcryptService.comparePasswords(userInfo.password, user.password)
     if (!isValidPassword) {
       throw new UnauthorizedException('Password is not correct');
     }
-    const {password, ...others} = user
+    const { password, ...others } = user
     return others
   }
 
-  async login(user: {username: string, email: string, URLImage: string}) {
+  async login(user: { username: string, email: string, URLImage: string }) {
     const payload = { user };
     return {
       status: "200",
@@ -87,7 +87,4 @@ export class UserService {
   async deleteAllUsers() {
     return await this.databaseService.user.deleteMany()
   }
-
-  
-
 }
